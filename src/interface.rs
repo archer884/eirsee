@@ -1,4 +1,6 @@
-use irc::responder::Responder;
+use config::Config;
+use message::OutgoingMessage;
+use responder::Responder;
 use std::io::{BufRead, BufReader, Write};
 use std::net::{TcpStream, ToSocketAddrs};
 use std::str;
@@ -9,11 +11,15 @@ use std::thread;
 // but rather only to the life of this struct. I was able to demonstrate this by borrowing a DummyResponder
 // and attempting to use it in this position. That didn't work. However, an owend DummyResponder works
 // fine.
-pub struct IrcInterface<T: 'static> { responder: T }
+pub struct IrcInterface<T: 'static> {
+    config: Config,
+    responder: T
+}
 
 impl<T: Responder> IrcInterface<T> {
     pub fn new(responder: T) -> IrcInterface<T> {
         IrcInterface {
+            config: Config::default(),
             responder: responder,
         }
     }
@@ -21,28 +27,29 @@ impl<T: Responder> IrcInterface<T> {
     // As you can see, this method consumes the IrcInterface and returns only a handle to the sender thread
     // spawned by this function. This is intended to provide something of a workaround for the (very annoying)
     // problems I had with hiirc: to wit, the fact that it was a practical impossibility to initiate any
-    // kind of communication from the client side. Communication initiated from the server side is fine for 
+    // kind of communication from the client side. Communication initiated from the server side is fine for
     // a bot that reacts to stimuli in the channel or from ... You know, whatever ... but it's not so good for
-    // what I had in mind, which was, for instance, the ability to send arbitrary commands from the client 
+    // what I had in mind, which was, for instance, the ability to send arbitrary commands from the client
     // side, or to carry out certain functions on a scheduled basis, etc.
-    pub fn connect<A: ToSocketAddrs>(self, address: A) -> mpsc::Sender<String> {
+    pub fn connect<A: ToSocketAddrs>(self, address: A) -> mpsc::Sender<OutgoingMessage> {
+        let IrcInterface { config, responder } = self;
         let mut tx_stream = TcpStream::connect(address).expect("unable to connect");
         let mut rx_stream = BufReader::new(tx_stream.try_clone().expect("unable to clone stream"));
 
         // Oddly enough, these type annotations are required in order to get this to compile.
-        let (responder_to_writer_tx, responder_to_writer_rx) = mpsc::channel::<String>();
         let (reader_to_responder_tx, reader_to_responder_rx) = mpsc::channel::<String>();
+        let (responder_to_writer_tx, responder_to_writer_rx) = mpsc::channel::<OutgoingMessage>();
 
         // Responder thread
         //
-        // I'm not entirely convinced that this needs to be separate from the reader thread, but I don't want to 
+        // I'm not entirely convinced that this needs to be separate from the reader thread, but I don't want to
         // lock myself into any dumb decisions at this point and the cost of sending a message from that thread
-        // to this thread and then on to the writer thread is probably so high that it can't be measured in 
+        // to this thread and then on to the writer thread is probably so high that it can't be measured in
         // millionths of a cent, so...
         let write_handle = responder_to_writer_tx.clone();
         thread::spawn(move || {
             for message in reader_to_responder_rx.iter() {
-                if let Some(response) = self.responder.respond(&message) {
+                if let Some(response) = responder.respond(message) {
                     responder_to_writer_tx.send(response);
                 }
             }
@@ -59,13 +66,15 @@ impl<T: Responder> IrcInterface<T> {
         // Writer thread
         thread::spawn(move || {
             for message in responder_to_writer_rx.iter() {
-                println!("tx: {}", message);
-                write!(tx_stream, "{}\r\n", message).expect("could not send response");
+                println!("tx: {}", config.format(&message));
+                write!(tx_stream, "{}\r\n", config.format(&message))
+                    .expect("could not send response");
             }
         });
 
-        write_handle.send(String::from("NICK scrbot"));
-        write_handle.send(String::from("USER scrbot 0 * :Scratch Bot"));
+        write_handle.send(OutgoingMessage::Nick);
+        write_handle.send(OutgoingMessage::User);
+        write_handle.send(OutgoingMessage::Join);
 
         write_handle
     }
