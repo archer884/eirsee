@@ -17,7 +17,7 @@ pub enum IncomingMessage {
 
 // Why can I still not use TryFrom for this?!
 impl str::FromStr for IncomingMessage {
-    type Err = ();
+    type Err = String;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         if s.starts_with("PING") {
@@ -38,7 +38,7 @@ impl str::FromStr for IncomingMessage {
             })
         }
 
-        Err(())
+        Err(format!("Unrecognized: {}", s))
     }
 }
 

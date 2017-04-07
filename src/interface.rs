@@ -11,28 +11,28 @@ use std::thread;
 // but rather only to the life of this struct. I was able to demonstrate this by borrowing a DummyResponder
 // and attempting to use it in this position. That didn't work. However, an owend DummyResponder works
 // fine.
-pub struct IrcInterface<T: 'static> {
+pub struct Core<T: 'static> {
     config: Config,
     responder: T
 }
 
-impl<T: Responder> IrcInterface<T> {
-    pub fn new(responder: T) -> IrcInterface<T> {
-        IrcInterface {
+impl<T: Responder> Core<T> {
+    pub fn new(responder: T) -> Core<T> {
+        Core {
             config: Config::default(),
             responder: responder,
         }
     }
 
-    // As you can see, this method consumes the IrcInterface and returns only a handle to the sender thread
+    // As you can see, this method consumes the Core and returns only a handle to the sender thread
     // spawned by this function. This is intended to provide something of a workaround for the (very annoying)
     // problems I had with hiirc: to wit, the fact that it was a practical impossibility to initiate any
     // kind of communication from the client side. Communication initiated from the server side is fine for
     // a bot that reacts to stimuli in the channel or from ... You know, whatever ... but it's not so good for
     // what I had in mind, which was, for instance, the ability to send arbitrary commands from the client
     // side, or to carry out certain functions on a scheduled basis, etc.
-    pub fn connect<A: ToSocketAddrs>(self, address: A) -> mpsc::Sender<OutgoingMessage> {
-        let IrcInterface { config, responder } = self;
+    pub fn run<A: ToSocketAddrs>(self, address: A) -> mpsc::Sender<OutgoingMessage> {
+        let Core { config, responder } = self;
         let mut tx_stream = TcpStream::connect(address).expect("unable to connect");
         let mut rx_stream = BufReader::new(tx_stream.try_clone().expect("unable to clone stream"));
 

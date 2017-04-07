@@ -12,7 +12,7 @@ pub trait Responder: Send {
             // First off, just fire back pongs immediately because I can't be arsed to even consider configuring this.
             Ok(IncomingMessage::Ping(message)) => Some(OutgoingMessage::Pong(message)),
             Ok(IncomingMessage::ChannelMessage { sender, content }) => self.channel_message(sender, content),
-            Ok(IncomingMessage::PrivateMessage { sender, mut content }) => self.private_message(sender, content),
+            Ok(IncomingMessage::PrivateMessage { sender, content }) => self.private_message(sender, content),
 
             _ => None,
         }
