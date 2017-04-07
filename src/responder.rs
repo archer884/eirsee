@@ -11,13 +11,16 @@ pub trait Responder: Send {
         match message.parse() {
             // First off, just fire back pongs immediately because I can't be arsed to even consider configuring this.
             Ok(IncomingMessage::Ping(message)) => Some(OutgoingMessage::Pong(message)),
-            Ok(IncomingMessage::ChannelMessage { sender, content }) => self.channel_message(sender, content),
+            Ok(IncomingMessage::ChannelMessage { sender, channel, content }) => self.channel_message(sender, channel, content),
             Ok(IncomingMessage::PrivateMessage { sender, content }) => self.private_message(sender, content),
 
-            _ => None,
+            _ => {
+                println!("UNKNOWN: {}", message);
+                None
+            },
         }
     }
 
-    fn channel_message(&self, sender: String, content: String) -> Option<OutgoingMessage>;
+    fn channel_message(&self, sender: String, channel: String, content: String) -> Option<OutgoingMessage>;
     fn private_message(&self, sender: String, content: String) -> Option<OutgoingMessage>;
 }

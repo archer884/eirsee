@@ -11,7 +11,7 @@ lazy_static! {
 pub enum IncomingMessage {
     Ping(String),
     // Channel messages do not include the channel they were received from because we only join one damn channel.
-    ChannelMessage { sender: String, content: String },
+    ChannelMessage { sender: String, channel: String, content: String },
     PrivateMessage { sender: String, content: String },
 }
 
@@ -27,6 +27,7 @@ impl str::FromStr for IncomingMessage {
         if let Some(captures) = CHANMSG.captures(s) {
             return Ok(IncomingMessage::ChannelMessage {
                 sender: captures.get(1).unwrap().as_str().to_string(),
+                channel: captures.get(2).unwrap().as_str().to_string(),
                 content: captures.get(3).unwrap().as_str().to_string(),
             })
         }
@@ -43,10 +44,10 @@ impl str::FromStr for IncomingMessage {
 }
 
 // I don't know if there is any programmatic difference between a "channel message" and a "private message"
-// for the purposes of outgoing messages. There *kind of* is for incoming messages (you can target either the 
+// for the purposes of outgoing messages. There *kind of* is for incoming messages (you can target either the
 // channel or the person who sent you the message, right? I dunno...)
 //
-// Also, I'm not certain that an outgoing message should not just reference a user via an Rc or something, but 
+// Also, I'm not certain that an outgoing message should not just reference a user via an Rc or something, but
 // I am not clear on how to pass that across thread boundaries. That's *probably* something I can revisit later.
 pub enum OutgoingMessage {
     Nick,

@@ -1,5 +1,4 @@
 use message::*;
-use std::fmt;
 
 pub struct Config {
     pub user: String,

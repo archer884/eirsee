@@ -6,3 +6,4 @@ authors = ["J/A <archer884@gmail.com>"]
 [dependencies]
 lazy_static = "*"
 regex = "*"
+native-tls = "*"
