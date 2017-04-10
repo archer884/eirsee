@@ -18,6 +18,18 @@ impl Responder for DummyResponder {
         println!("{} in {}: {}", sender, channel, content);
         Some(OutgoingMessage::ChannelMessage { content: format!("ECHO: {}", content) })
     }
+
+    fn user_join(&self, user: String) -> Option<OutgoingMessage> {
+        Some(OutgoingMessage::to_channel(
+            format!("Hey, {}. Welcome!", user)
+        ))
+    }
+
+    fn user_part(&self, user: String) -> Option<OutgoingMessage> {
+        Some(OutgoingMessage::to_channel(
+            format!("Thank God, {} is gone. We can go back to talking shit now.", user)
+        ))
+    }
 }
 
 fn main() {

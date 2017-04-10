@@ -11,9 +11,13 @@ pub trait Responder: Send {
         match message.parse() {
             // First off, just fire back pongs immediately because I can't be arsed to even consider configuring this.
             Ok(IncomingMessage::Ping(message)) => Some(OutgoingMessage::Pong(message)),
+            Ok(IncomingMessage::Join(user)) => self.user_join(user),
+            Ok(IncomingMessage::Part(user)) => self.user_part(user),
             Ok(IncomingMessage::ChannelMessage { sender, channel, content }) => self.channel_message(sender, channel, content),
             Ok(IncomingMessage::PrivateMessage { sender, content }) => self.private_message(sender, content),
 
+            // This should almost certainly be returning some kind of an error case, because it's not kosher
+            // to be spitting out log messages and swallowing weirdness this deep in the stack.
             _ => {
                 println!("UNKNOWN: {}", message);
                 None
@@ -23,4 +27,6 @@ pub trait Responder: Send {
 
     fn channel_message(&self, sender: String, channel: String, content: String) -> Option<OutgoingMessage>;
     fn private_message(&self, sender: String, content: String) -> Option<OutgoingMessage>;
+    fn user_join(&self, user: String) -> Option<OutgoingMessage>;
+    fn user_part(&self, user: String) -> Option<OutgoingMessage>;
 }
