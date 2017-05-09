@@ -90,7 +90,7 @@ impl<T: Responder> Core<T> {
         // Here I make the following assumptions: each bot has one name, one username, and plans to join only one
         // channel. If you want the bot to handle multiple channels that's fine, but you're going to need to use
         // separate instances of the bot in order to pull that off. At least for right now.
-        write_handle.send(OutgoingMessage::Nick).unwrap();
+        write_handle.send(OutgoingMessage::Nick(None)).unwrap();
         write_handle.send(OutgoingMessage::User).unwrap();
         write_handle.send(OutgoingMessage::Join).unwrap();
         write_handle

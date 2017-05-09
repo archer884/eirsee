@@ -64,7 +64,7 @@ impl str::FromStr for IncomingMessage {
 pub enum OutgoingMessage {
     // FIXME: We need a way to set this to something other than the configured value, so maybe let this
     // contain a None that we can replace with a some if we want to override configuration.
-    Nick,
+    Nick(Option<String>),
     User,
     Join,
     Pong(String),
@@ -93,7 +93,8 @@ impl<'a> fmt::Display for MessageFormatter<'a> {
         use self::OutgoingMessage::*;
 
         match *self.message {
-            Nick => write!(f, "NICK {}", self.config.user),
+            Nick(Some(ref nick)) => write!(f, "NICK {}", nick),
+            Nick(None) => write!(f, "NICK {}", self.config.user),
             User => write!(f, "USER {} 0 * :{}", self.config.user, self.config.name),
             Join => write!(f, ":{} join :#{}", self.config.user, self.config.channel),
 
