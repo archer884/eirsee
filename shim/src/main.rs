@@ -42,9 +42,9 @@ fn main() {
         .map(|s| Cow::from(s))
         .unwrap_or_else(|| Cow::from("localhost:6667"));
 
-    let interface = Core::new(DummyResponder);
+    let interface = Core::with_config(Default::default());
     let stdin = io::stdin();
-    let handle = interface.connect(&*address);
+    let handle = interface.connect(&*address, DummyResponder);
 
     for mut line in stdin.lock().lines().filter_map(|s| s.ok()) {
         match line.pop() {

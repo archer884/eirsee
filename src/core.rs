@@ -11,17 +11,13 @@ use std::thread;
 // but rather only to the life of this struct. I was able to demonstrate this by borrowing a DummyResponder
 // and attempting to use it in this position. That didn't work. However, an owend DummyResponder works
 // fine.
-pub struct Core<T: 'static> {
-    config: Config,
-    responder: T
+pub struct Core {
+    config: Config
 }
 
-impl<T: Responder> Core<T> {
-    pub fn new(responder: T) -> Core<T> {
-        Core {
-            config: Config::default(),
-            responder: responder,
-        }
+impl Core {
+    pub fn with_config(config: Config) -> Core {
+        Core { config }
     }
 
     // As you can see, this method consumes the Core and returns only a handle to the sender thread
@@ -31,10 +27,8 @@ impl<T: Responder> Core<T> {
     // a bot that reacts to stimuli in the channel or from ... You know, whatever ... but it's not so good for
     // what I had in mind, which was, for instance, the ability to send arbitrary commands from the client
     // side, or to carry out certain functions on a scheduled basis, etc.
-    pub fn connect(self, address: &str) -> mpsc::Sender<OutgoingMessage> {
-        let Core { config, responder } = self;
-
-        // let connector = TlsConnector::builder().unwrap().build().unwrap();
+    pub fn connect<T: Responder + 'static>(self, address: &str, responder: T) -> mpsc::Sender<OutgoingMessage> {
+        let Core { config } = self;
 
         println!("Connecting...");
         let tx_stream = TcpStream::connect(address).unwrap();

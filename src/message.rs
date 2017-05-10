@@ -62,11 +62,10 @@ impl str::FromStr for IncomingMessage {
 // Also, I'm not certain that an outgoing message should not just reference a user via an Rc or something, but
 // I am not clear on how to pass that across thread boundaries. That's *probably* something I can revisit later.
 pub enum OutgoingMessage {
-    // FIXME: We need a way to set this to something other than the configured value, so maybe let this
-    // contain a None that we can replace with a some if we want to override configuration.
     Nick(Option<String>),
     User,
     Join,
+    Topic(String),
     Pong(String),
     ChannelMessage { content: String },
     PrivateMessage { recipient: String, content: String },
@@ -97,6 +96,7 @@ impl<'a> fmt::Display for MessageFormatter<'a> {
             Nick(None) => write!(f, "NICK {}", self.config.user),
             User => write!(f, "USER {} 0 * :{}", self.config.user, self.config.name),
             Join => write!(f, ":{} join :#{}", self.config.user, self.config.channel),
+            Topic(ref topic) => write!(f, ":{} TOPIC #{} :{}", self.config.user, self.config.channel, topic),
 
             // Pong formatter looks different from the rest because the message we copy from the incoming ping
             // already contains the : expected in the pong. Rather than do the extra work to remove that, we're
