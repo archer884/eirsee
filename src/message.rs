@@ -67,8 +67,9 @@ pub enum OutgoingMessage {
     Join,
     Topic(String),
     Pong(String),
-    ChannelMessage { content: String },
     PrivateMessage { recipient: String, content: String },
+    ChannelMessage { content: String },
+    ConstChannelMessage { content: &'static str },
     Raw(String),
 }
 
@@ -79,6 +80,10 @@ impl OutgoingMessage {
 
     pub fn to_private(recipient: String, content: String) -> OutgoingMessage {
         OutgoingMessage::PrivateMessage { recipient, content }
+    }
+
+    pub fn const_to_channel(content: &'static str) -> OutgoingMessage {
+        OutgoingMessage::ConstChannelMessage { content }
     }
 }
 
@@ -105,6 +110,7 @@ impl<'a> fmt::Display for MessageFormatter<'a> {
 
             PrivateMessage { ref recipient, ref content } => write!(f, ":{} PRIVMSG {} :{}", self.config.user, recipient, content),
             ChannelMessage { ref content } => write!(f, ":{} PRIVMSG #{} :{}", self.config.user, self.config.channel, content),
+            ConstChannelMessage { content } => write!(f, ":{} PRIVMSG #{} :{}", self.config.user, self.config.channel, content),
             Raw(ref message) => write!(f, "{}", message),
         }
     }
